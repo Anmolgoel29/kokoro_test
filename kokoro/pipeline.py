@@ -202,7 +202,7 @@ class KPipeline:
             z += 1
             if z < len(tokens) and tokens[z].phonemes in bumps:
                 z += 1
-            if next_count - len(KPipeline.tokens_to_ps(tokens[:z])) <= 140:
+            if next_count - len(KPipeline.tokens_to_ps(tokens[:z])) <= 70:
                 return z
         return len(tokens)
 
@@ -221,7 +221,7 @@ class KPipeline:
             t.phonemes = '' if t.phonemes is None else t.phonemes#.replace('ɾ', 'T')
             next_ps = t.phonemes + (' ' if t.whitespace else '')
             next_pcount = pcount + len(next_ps.rstrip())
-            if next_pcount > 140:
+            if next_pcount > 70:
                 z = KPipeline.waterfall_last(tks, next_pcount)
                 text = KPipeline.tokens_to_text(tks[:z])
                 logger.debug(f"Chunking text at {z}: '{text[:30]}{'...' if len(text) > 30 else ''}'")
@@ -279,8 +279,8 @@ class KPipeline:
         # Handle raw phoneme string
         if isinstance(tokens, str):
             logger.debug("Processing phonemes from raw string")
-            if len(tokens) > 140:
-                raise ValueError(f'Phoneme string too long: {len(tokens)} > 140')
+            if len(tokens) > 70:
+                raise ValueError(f'Phoneme string too long: {len(tokens)} > 70')
             output = KPipeline.infer(model, tokens, pack, speed) if model else None
             yield self.Result(graphemes='', phonemes=tokens, output=output)
             return
@@ -290,10 +290,10 @@ class KPipeline:
         for gs, ps, tks in self.en_tokenize(tokens):
             if not ps:
                 continue
-            elif len(ps) > 140:
-                logger.warning(f"Unexpected len(ps) == {len(ps)} > 140 and ps == '{ps}'")
-                logger.warning("Truncating to 140 characters")
-                ps = ps[:140]
+            elif len(ps) > 70:
+                logger.warning(f"Unexpected len(ps) == {len(ps)} > 70 and ps == '{ps}'")
+                logger.warning("Truncating to 70 characters")
+                ps = ps[:70]
             output = KPipeline.infer(model, ps, pack, speed) if model else None
             if output is not None and output.pred_dur is not None:
                 KPipeline.join_timestamps(tks, output.pred_dur)
@@ -301,7 +301,7 @@ class KPipeline:
 
     @staticmethod
     def join_timestamps(tokens: List[en.MToken], pred_dur: torch.LongTensor):
-        # Multiply by 600 to go from pred_dur frames to sample_rate 14000
+        # Multiply by 600 to go from pred_dur frames to sample_rate 7000
         # Equivalent to dividing pred_dur frames by 40 to get timestamp in seconds
         # We will count nice round half-frames, so the divisor is 80
         MAGIC_DIVISOR = 80
@@ -395,9 +395,9 @@ class KPipeline:
                 for gs, ps, tks in self.en_tokenize(tokens):
                     if not ps:
                         continue
-                    elif len(ps) > 140:
-                        logger.warning(f"Unexpected len(ps) == {len(ps)} > 140 and ps == '{ps}'")
-                        ps = ps[:140]
+                    elif len(ps) > 70:
+                        logger.warning(f"Unexpected len(ps) == {len(ps)} > 70 and ps == '{ps}'")
+                        ps = ps[:70]
                     output = KPipeline.infer(model, ps, pack, speed) if model else None
                     if output is not None and output.pred_dur is not None:
                         KPipeline.join_timestamps(tks, output.pred_dur)
@@ -443,9 +443,9 @@ class KPipeline:
                     ps, _ = self.g2p(chunk)
                     if not ps:
                         continue
-                    elif len(ps) > 140:
-                        logger.warning(f'Truncating len(ps) == {len(ps)} > 140')
-                        ps = ps[:140]
+                    elif len(ps) > 70:
+                        logger.warning(f'Truncating len(ps) == {len(ps)} > 70')
+                        ps = ps[:70]
                         
                     output = KPipeline.infer(model, ps, pack, speed) if model else None
                     yield self.Result(graphemes=chunk, phonemes=ps, output=output, text_index=graphemes_index)
